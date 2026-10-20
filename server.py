@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 BASE = Path(__file__).parent
-KODIK_URL = "https://kodikapi.com/search"
+KODIK_HOSTS = ["https://kodikapi.com", "https://kodik-api.com", "https://kodik.biz/api"]
 CACHE, CACHE_TTL = {}, 600  # секунд
 
 
@@ -34,21 +34,22 @@ def load_tokens():
 
 
 def kodik_search(query):
-    last_err = "Нет доступных токенов (см. .env / tokens.json)"
+    last_err = "Нет доступных токенов (см. KODIK_TOKEN / tokens.json)"
     for token in load_tokens():
         params = urllib.parse.urlencode({
             "token": token, "title": query, "types": "anime,anime-serial",
             "with_material_data": "true", "limit": 50,
         })
-        try:
-            req = urllib.request.Request(f"{KODIK_URL}?{params}", headers={"User-Agent": "AOI/1.0"})
-            with urllib.request.urlopen(req, timeout=15) as r:
-                data = json.load(r)
-            if data.get("error"):
-                last_err = str(data["error"]); continue  # токен умер -> пробуем следующий
-            return data.get("results", [])
-        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
-            last_err = str(e)
+        for host in KODIK_HOSTS:  # если один домен недоступен -> пробуем другой
+            try:
+                req = urllib.request.Request(f"{host}/search?{params}", headers={"User-Agent": "AOI/1.0"})
+                with urllib.request.urlopen(req, timeout=15) as r:
+                    data = json.load(r)
+                if data.get("error"):
+                    last_err = str(data["error"]); break  # токен умер -> следующий токен
+                return data.get("results", [])
+            except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
+                last_err = f"{host}: {e}"
     raise RuntimeError(last_err)
 
 
