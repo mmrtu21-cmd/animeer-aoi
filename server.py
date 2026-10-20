@@ -1,85 +1,133 @@
 #!/usr/bin/env python3
-"""AOI: раздаёт index.html и проксирует поиск Kodik (токен остаётся на сервере)."""
-import json, os, time, urllib.parse, urllib.request, urllib.error
+"""АОИ: локальный сервер. Запуск:  python server.py   →  http://127.0.0.1:8000
+В .env рядом положите строку:  KODIK_TOKEN=ваш_токен
+"""
+import json, os, time, urllib.parse, urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-BASE = Path(__file__).parent
-KODIK_HOSTS = ["https://kodik-api.com"]  # kodikapi.com и kodik.biz больше не работают
-CACHE, CACHE_TTL = {}, 600  # секунд
+ROOT = Path(__file__).resolve().parent
+PAGE = ROOT / "aoi_anime_liquid_glass_kodik.html"
+API = "https://kodik-api.com"
+CACHE, TTL = {}, 300
 
 
-def load_env():
-    f = BASE / ".env"
+def env():
+    out = dict(os.environ)
+    f = ROOT / ".env"
     if f.exists():
         for line in f.read_text(encoding="utf-8").splitlines():
             if "=" in line and not line.strip().startswith("#"):
                 k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip().strip('"\''))
+                out[k.strip()] = v.strip().strip("\"'")
+    return out
 
 
-def load_tokens():
-    """Порядок: KODIK_TOKEN из .env, затем stable -> unstable -> legacy из tokens.json."""
-    tokens = []
-    if os.environ.get("KODIK_TOKEN"):
-        tokens.append(os.environ["KODIK_TOKEN"])
-    f = BASE / "tokens.json"
-    if f.exists():
-        data = json.loads(f.read_text(encoding="utf-8"))
-        for group in ("stable", "unstable"):
-            for t in data.get(group, []):
-                if t.get("functions_availability", {}).get("search") and t["tokn"] not in tokens:
-                    tokens.append(t["tokn"])
-    return tokens
+def token():
+    e = env()
+    return e.get("KODIK_TOKEN") or e.get("KODIK_API_KEY") or e.get("KODIK_API_TOKEN")
 
 
-def kodik_search(query):
-    errors = []
-    for token in load_tokens():
-        params = urllib.parse.urlencode({
-            "token": token, "title": query, "types": "anime,anime-serial",
-            "with_material_data": "true", "limit": 50,
-        })
-        for host in KODIK_HOSTS:
-            try:
-                req = urllib.request.Request(f"{host}/search?{params}", headers={"User-Agent": "Mozilla/5.0 AOI/1.0"})
-                with urllib.request.urlopen(req, timeout=15) as r:
-                    data = json.load(r)
-            except urllib.error.HTTPError as e:
-                body = e.read()[:200].decode("utf-8", "replace")
-                errors.append(f"{token[:6]}…: HTTP {e.code} {body}"); continue
-            except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
-                errors.append(f"{host}: {e}"); continue
-            if data.get("error"):
-                errors.append(f"{token[:6]}…: {data['error']}"); continue
-            return data.get("results", [])
-    raise RuntimeError(" | ".join(errors) or "Нет токенов (KODIK_TOKEN / tokens.json)")
+def kodik(path, **params):
+    tk = token()
+    if not tk:
+        raise RuntimeError("Не найден KODIK_TOKEN в файле .env")
+    params = {k: v for k, v in params.items() if v not in (None, "")}
+    url = f"{API}/{path}?{urllib.parse.urlencode({**params, 'token': tk})}"
+    hit = CACHE.get(url)
+    if hit and time.time() - hit[0] < TTL:
+        return hit[1]
+    req = urllib.request.Request(url, headers={"User-Agent": "AOI/1.0"})
+    with urllib.request.urlopen(req, timeout=15) as r:
+        data = json.load(r)
+    CACHE[url] = (time.time(), data)
+    return data
 
 
-def normalize(results):
-    out, seen = [], set()
+def num(v):
+    try:
+        f = float(v)
+        return round(f, 1) if f > 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def key_of(r):
+    for prefix, f in (("s", "shikimori_id"), ("k", "kinopoisk_id"), ("i", "imdb_id")):
+        if r.get(f):
+            return prefix + str(r[f])
+    return "x" + str(r.get("id"))
+
+
+def card(r):
+    m = r.get("material_data") or {}
+    shots = m.get("screenshots") or []
+    return {
+        "key": key_of(r),
+        "title": r.get("title") or m.get("title") or r.get("title_orig") or "Без названия",
+        "orig": r.get("title_orig"),
+        "year": r.get("year"),
+        "poster": m.get("poster_url"),
+        "banner": shots[0] if shots else None,
+        "desc": m.get("anime_description") or m.get("description") or "",
+        "genres": m.get("anime_genres") or m.get("all_genres") or m.get("genres") or [],
+        "status": m.get("anime_status") or m.get("all_status"),
+        "kp": num(m.get("kinopoisk_rating")),
+        "imdb": num(m.get("imdb_rating")),
+        "eps": m.get("episodes_total") or r.get("episodes_count"),
+        "kind": r.get("type"),
+    }
+
+
+def unique(results, limit=36):
+    seen = {}
     for r in results:
-        link = r.get("link")
-        if not link:
-            continue
-        tr = (r.get("translation") or {}).get("title")
-        key = (r.get("id") or link)
-        if key in seen:
-            continue
-        seen.add(key)
-        title = r.get("title") or r.get("title_orig") or "Без названия"
-        out.append({
-            "title": f"{title} — {tr}" if tr else title,
-            "type": r.get("type", "anime"),
-            "year": r.get("year"),
-            "link": link,
-        })
-    return out[:20]
+        c = card(r)
+        old = seen.get(c["key"])
+        if not old:
+            seen[c["key"]] = c
+        else:  # дополняем данными из записи, где они есть
+            for k, v in c.items():
+                if not old.get(k) and v:
+                    old[k] = v
+    return list(seen.values())[:limit]
 
 
-class Handler(BaseHTTPRequestHandler):
-    def _send(self, code, body, ctype="application/json; charset=utf-8"):
-        raw = body if isinstance(body, bytes) else body.encode("utf-8")
+COMMON = dict(types="anime-serial,anime", with_material_data="true", limit=100)
+
+
+def catalog(q, mode):
+    if q:
+        data = kodik("search", title=q, **COMMON)
+    elif mode == "ongoing":
+        data = kodik("list", sort="updated_at", order="desc", anime_status="ongoing", **COMMON)
+    else:
+        data = kodik("list", sort="shikimori_rating", order="desc", has_field="kinopoisk_id", **COMMON)
+    return {"items": unique(data.get("results", []))}
+
+
+def title(key):
+    field = {"s": "shikimori_id", "k": "kinopoisk_id", "i": "imdb_id", "x": "id"}.get(key[:1])
+    if not field:
+        raise RuntimeError("Неверный идентификатор")
+    results = kodik("search", **{field: key[1:]}, with_material_data="true", limit=100).get("results", [])
+    voices, seen = [], set()
+    for r in results:
+        t = r.get("translation") or {}
+        if t.get("id") in seen or not r.get("link"):
+            continue
+        seen.add(t.get("id"))
+        voices.append({"id": t.get("id"), "name": t.get("title") or "Озвучка", "type": t.get("type"),
+                       "eps": r.get("episodes_count") or r.get("last_episode"),
+                       "quality": r.get("quality"), "link": r["link"]})
+    voices.sort(key=lambda v: (v["type"] == "subtitles", -(v["eps"] or 0)))
+    best = next((r for r in results if r.get("material_data")), results[0] if results else None)
+    return {"item": card(best) if best else None, "voices": voices}
+
+
+class H(BaseHTTPRequestHandler):
+    def send(self, code, body, ctype="application/json; charset=utf-8"):
+        raw = body if isinstance(body, bytes) else json.dumps(body, ensure_ascii=False).encode()
         self.send_response(code)
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(raw)))
@@ -87,31 +135,23 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(raw)
 
     def do_GET(self):
-        url = urllib.parse.urlparse(self.path)
-        if url.path in ("/", "/index.html"):
-            return self._send(200, (BASE / "index.html").read_bytes(), "text/html; charset=utf-8")
-        if url.path == "/api/kodik/search":
-            q = urllib.parse.parse_qs(url.query).get("q", [""])[0].strip()
-            if not q:
-                return self._send(400, json.dumps({"detail": "Пустой запрос"}))
-            hit = CACHE.get(q.lower())
-            if hit and time.time() - hit[0] < CACHE_TTL:
-                return self._send(200, json.dumps({"results": hit[1]}))
-            try:
-                results = normalize(kodik_search(q))
-            except RuntimeError as e:
-                return self._send(502, json.dumps({"detail": f"Kodik API недоступен: {e}"}))
-            CACHE[q.lower()] = (time.time(), results)
-            return self._send(200, json.dumps({"results": results}))
-        self._send(404, json.dumps({"detail": "Not found"}))  # tokens.json и .env НЕ раздаются
+        u = urllib.parse.urlparse(self.path)
+        q = {k: v[0] for k, v in urllib.parse.parse_qs(u.query).items()}
+        try:
+            if u.path in ("/", "/index.html"):
+                return self.send(200, PAGE.read_bytes(), "text/html; charset=utf-8")
+            if u.path == "/api/catalog":
+                return self.send(200, catalog(q.get("q", "").strip(), q.get("mode", "popular")))
+            if u.path == "/api/title":
+                return self.send(200, title(q.get("key", "")))
+            self.send(404, {"detail": "Не найдено"})
+        except Exception as e:  # noqa: BLE001
+            self.send(502, {"detail": f"Kodik: {e}"})
 
-    def log_message(self, fmt, *a):
+    def log_message(self, *a):
         pass
 
 
 if __name__ == "__main__":
-    load_env()
-    port = int(os.environ.get("PORT", 8000))
-    print(f"Токенов найдено: {len(load_tokens())}")
-    print(f"AOI: http://localhost:{port}")
-    ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()
+    print("АОИ запущен: http://127.0.0.1:8000")
+    ThreadingHTTPServer(("127.0.0.1", 8000), H).serve_forever()
