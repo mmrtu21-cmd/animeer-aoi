@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0c">
+<title>АОИ — аниме без лишнего</title>
+<style>
+:root{color-scheme:dark;--bg:#0a0a0c;--line:rgba(255,255,255,.10);--muted:#a5a5b0;--text:#f7f7fa;--ease:cubic-bezier(.32,.72,0,1);--glass:blur(24px) saturate(180%)}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--bg)}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#24232d 0,transparent 48%),var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;min-height:100vh}
+button,input{font:inherit}button{color:inherit;cursor:pointer;border:0;background:none}button:active{transform:scale(.97)}
+:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.shell{width:min(1440px,100%);margin:auto;padding:24px clamp(16px,4vw,56px) 110px}
+.nav-wrap{position:sticky;top:14px;z-index:20;display:flex;justify-content:center;margin-bottom:34px}
+.nav{width:min(100%,1080px);min-height:66px;display:flex;align-items:center;gap:18px;padding:10px 14px 10px 20px;border:1px solid var(--line);border-radius:24px;background:rgba(26,26,31,.68);backdrop-filter:var(--glass);-webkit-backdrop-filter:var(--glass);box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 16px 48px rgba(0,0,0,.28)}
+.brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:760;letter-spacing:.16em;white-space:nowrap}
+.brand-mark{width:28px;height:28px;border-radius:10px;background:linear-gradient(145deg,#fff,#a9a9b5);display:grid;place-items:center;color:#111;font-size:14px;letter-spacing:0}
+.search{flex:1;min-width:120px;position:relative}
+.search input{width:100%;height:42px;border:1px solid transparent;border-radius:14px;padding:0 14px 0 40px;background:rgba(255,255,255,.055);outline:none;color:#fff;transition:background .25s var(--ease),border-color .25s var(--ease),box-shadow .25s var(--ease)}
+.search input:focus{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);box-shadow:0 0 0 3px rgba(255,255,255,.04)}
+.search svg{position:absolute;left:13px;top:12px;color:#a8a8b2;pointer-events:none}
+.nav-links{display:flex;gap:4px}
+.chip{border-radius:12px;padding:10px 12px;font-size:13px;white-space:nowrap;color:#b7b7c1;transition:background .2s var(--ease),color .2s var(--ease),transform .2s var(--ease)}
+.chip:hover{color:#fff;background:rgba(255,255,255,.07)}.chip.active{color:#111;background:#f5f5f7;font-weight:650}
+.hero{position:relative;min-height:420px;overflow:hidden;border:1px solid var(--line);border-radius:30px;background:#19191f;box-shadow:inset 0 1px 0 rgba(255,255,255,.13);isolation:isolate}
+.hero-bg{position:absolute;inset:0;z-index:-2;background-position:center 35%;background-size:cover;filter:saturate(.8)}
+.hero:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(7,7,10,.96) 0%,rgba(7,7,10,.75) 38%,rgba(7,7,10,.12) 100%),linear-gradient(0deg,rgba(7,7,10,.65),transparent 50%)}
+.hero-content{max-width:600px;padding:clamp(28px,5vw,62px);min-height:420px;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start}
+.eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#d2d2dc;margin-bottom:16px}
+h1{font-size:clamp(34px,5.3vw,68px);line-height:.99;letter-spacing:-.055em;margin:0 0 18px;max-width:620px}
+.hero-desc{max-width:460px;color:#c3c3cd;line-height:1.65;font-size:14px;margin:0 0 22px}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;color:#dedee6;font-size:12px;margin-bottom:24px}
+.meta span,.tag{padding:7px 10px;border:1px solid rgba(255,255,255,.15);border-radius:9px;background:rgba(255,255,255,.07);backdrop-filter:blur(12px);font-size:12px}
+.meta b{color:#fff;font-weight:700;margin-left:4px}
+.actions{display:flex;gap:10px;align-items:center}
+.primary,.secondary{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:46px;padding:0 18px;border-radius:14px;border:1px solid var(--line);text-decoration:none;font-size:13px;font-weight:650;transition:transform .2s var(--ease),background .2s var(--ease)}
+.primary{background:#f6f6f8;color:#101014;border-color:#fff}.primary:hover{background:#dddde4}
+.secondary{background:rgba(255,255,255,.09);backdrop-filter:blur(16px)}.secondary:hover{background:rgba(255,255,255,.16)}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:14px;margin:42px 0 18px}
+.section-head h2{font-size:22px;letter-spacing:-.035em;margin:0 0 6px}.section-head p{font-size:12px;color:var(--muted);margin:0}
+.section-note{font-size:11px;color:#777782;letter-spacing:.08em;text-transform:uppercase}
+.filters{display:flex;gap:8px;overflow-x:auto;padding:2px 0 15px;scrollbar-width:none}.filters::-webkit-scrollbar{display:none}
+.filter{flex:none;border:1px solid var(--line);background:rgba(255,255,255,.035);padding:9px 13px;border-radius:12px;font-size:12px;color:#b7b7c1}
+.filter.active{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.22);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:24px 16px}
+.card{min-width:0;position:relative;cursor:pointer;animation:arrive .45s var(--ease) both}
+@keyframes arrive{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.poster-wrap{position:relative;aspect-ratio:3/4.25;overflow:hidden;border-radius:17px;background:#1c1c22;border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.14);isolation:isolate}
+.poster{width:100%;height:100%;object-fit:cover;display:block;transition:transform .55s var(--ease)}
+.card:hover .poster{transform:scale(1.035)}
+.poster-wrap:after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(0deg,rgba(0,0,0,.34),transparent 38%)}
+.score{position:absolute;z-index:2;top:9px;left:9px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.score span{padding:4px 7px;border:1px solid rgba(255,255,255,.18);border-radius:8px;background:rgba(15,15,18,.68);backdrop-filter:blur(16px);font-size:10.5px;font-weight:700}
+.save{position:absolute;z-index:3;top:8px;right:8px;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:rgba(15,15,18,.62);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(16px)}
+.save.saved{background:#f4f4f6;color:#101014}
+.card-title{font-size:13px;line-height:1.35;font-weight:650;margin:11px 0 6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-sub{font-size:11px;color:#93939e;display:flex;justify-content:space-between;gap:6px}
+.empty,.loading{grid-column:1/-1;padding:52px 16px;text-align:center;color:var(--muted);border:1px solid var(--line);border-radius:20px;background:rgba(255,255,255,.025)}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #555;border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;z-index:120;left:50%;bottom:92px;transform:translate(-50%,12px);opacity:0;pointer-events:none;background:rgba(35,35,42,.92);border:1px solid var(--line);backdrop-filter:blur(20px);border-radius:13px;padding:12px 16px;font-size:13px;transition:all .25s var(--ease)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.dock{display:none}
+
+/* Страница аниме на весь экран */
+.page{position:fixed;inset:0;z-index:60;display:none;overflow:auto;background:var(--bg);overscroll-behavior:contain}
+.page.open{display:block;animation:arrive .3s var(--ease) both}
+.page-bg{position:absolute;inset:0 0 auto;height:520px;background:center/cover no-repeat;filter:blur(42px) saturate(1.2);opacity:.38;transform:scale(1.2);pointer-events:none}
+.page-bg:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,var(--bg),transparent)}
+.page-in{position:relative;width:min(1100px,100%);margin:auto;padding:max(14px,env(safe-area-inset-top)) clamp(14px,4vw,32px) 60px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:max(10px,env(safe-area-inset-top));z-index:5;padding:8px;border:1px solid var(--line);border-radius:20px;background:rgba(26,26,31,.7);backdrop-filter:var(--glass);-webkit-backdrop-filter:var(--glass);box-shadow:inset 0 1px 0 rgba(255,255,255,.13)}
+.bar .secondary{min-height:40px;padding:0 14px}
+.bar strong{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pl{position:relative;margin-top:16px;aspect-ratio:16/9;border-radius:20px;overflow:hidden;background:#000;border:1px solid var(--line);box-shadow:0 24px 80px #0008}
+.pl iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.pl-note{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:20px;color:var(--muted);font-size:13px;line-height:1.6}
+.vh{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#898994;margin:22px 0 10px}
+.voices{display:flex;flex-wrap:wrap;gap:8px}
+.voice{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.05);text-align:left;transition:background .25s var(--ease),border-color .25s var(--ease)}
+.voice:hover{background:rgba(255,255,255,.1)}
+.voice span{font-size:13px;font-weight:650}.voice small{font-size:11px;color:var(--muted)}
+.voice.active{background:#f5f5f7;border-color:#fff;color:#111}.voice.active small{color:#55555f}
+.info{display:grid;grid-template-columns:150px 1fr;gap:24px;margin-top:30px;align-items:start}
+.cover{width:150px;aspect-ratio:3/4.25;object-fit:cover;border-radius:16px;border:1px solid rgba(255,255,255,.16);background:#222;box-shadow:0 16px 40px #0008}
+.info h2{font-size:clamp(24px,4vw,40px);letter-spacing:-.045em;line-height:1.05;margin:0 0 6px}
+.orig{color:var(--muted);font-size:13px;margin-bottom:14px}
+.rate{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.rate div{padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.06);font-size:11px;color:var(--muted)}
+.rate b{display:block;font-size:20px;letter-spacing:-.03em;color:#fff;margin-top:2px}
+.desc{white-space:pre-line;color:#c7c7d0;font-size:14px;line-height:1.8;margin:20px 0 0}
+.tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:18px}
+
+footer{display:none}
+@media(max-width:1100px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}.hero,.hero-content{min-height:390px}.nav{gap:10px}.nav-links .chip{padding:9px}}
+@media(max-width:700px){
+  .shell{padding:12px 14px 105px}.nav-wrap{top:8px;margin-bottom:18px}.nav{padding:9px 10px;border-radius:19px;gap:10px;min-height:58px}.brand{font-size:13px;gap:7px}.brand-mark{width:25px;height:25px;border-radius:8px}.nav-links{display:none}.search input{height:38px;font-size:13px;padding-left:36px}.search svg{left:11px;top:10px}
+  .hero{min-height:460px;border-radius:23px}.hero-bg{background-position:58% center}.hero:after{background:linear-gradient(0deg,rgba(7,7,10,.96) 0%,rgba(7,7,10,.68) 48%,rgba(7,7,10,.12) 100%)}.hero-content{min-height:460px;padding:24px}.hero h1{font-size:clamp(35px,10vw,52px)}.hero-desc{font-size:13px;line-height:1.55}
+  .section-head{margin:30px 0 15px}.section-head h2{font-size:20px}.section-note{display:none}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:21px 12px}.poster-wrap{border-radius:15px}
+  .dock{position:fixed;z-index:30;bottom:max(10px,env(safe-area-inset-bottom));left:12px;right:12px;display:flex;justify-content:space-around;gap:4px;padding:8px 6px;border:1px solid rgba(255,255,255,.12);border-radius:21px;background:rgba(28,28,34,.82);backdrop-filter:var(--glass);-webkit-backdrop-filter:var(--glass);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 40px #0007}
+  .dock button{display:flex;flex:1;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:13px;color:#a6a6b1;font-size:10px}.dock button.active{background:rgba(255,255,255,.1);color:#fff}.dock svg{width:19px;height:19px}
+  .pl{border-radius:14px;margin-top:12px}.info{grid-template-columns:96px 1fr;gap:14px}.cover{width:96px;border-radius:12px}.desc{grid-column:1/-1;font-size:13px;line-height:1.7}.voice{padding:9px 12px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="nav-wrap">
+    <header class="nav">
+      <div class="brand"><span class="brand-mark">葵</span><span>АОИ</span></div>
+      <div class="search">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="search" type="search" lang="ru" placeholder="Найти аниме по названию…" autocomplete="off" aria-label="Поиск аниме">
+      </div>
+      <nav class="nav-links" aria-label="Категории">
+        <button class="chip active" data-mode="popular">Популярное</button>
+        <button class="chip" data-mode="ongoing">Онгоинги</button>
+        <button class="chip" data-mode="saved">Закладки</button>
+      </nav>
+    </header>
+  </div>
+
+  <main>
+    <section class="hero" aria-label="Аниме дня">
+      <div class="hero-bg" id="heroBg"></div>
+      <div class="hero-content">
+        <div class="eyebrow">ВЫБОР РЕДАКЦИИ · АНИМЕ ДНЯ</div>
+        <h1 id="heroTitle">Загружаем<br>вашу историю</h1>
+        <p class="hero-desc" id="heroDesc">Подбираем истории, к которым хочется возвращаться.</p>
+        <div class="meta" id="heroMeta"></div>
+        <div class="actions">
+          <button class="primary" id="heroWatch"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Смотреть</button>
+          <button class="secondary" id="heroSave"></button>
+        </div>
+      </div>
+    </section>
+
+    <section id="catalog">
+      <div class="section-head">
+        <div><h2 id="sectionTitle">Популярное аниме</h2><p id="sectionSubtitle">Истории, которые стоит посмотреть</p></div>
+        <span class="section-note" id="countLabel"></span>
+      </div>
+      <div class="filters" id="filters">
+        <button class="filter active" data-genre="all">Все</button>
+        <button class="filter" data-genre="экшен|боевик">Экшен</button>
+        <button class="filter" data-genre="приключения">Приключения</button>
+        <button class="filter" data-genre="драма">Драма</button>
+        <button class="filter" data-genre="фэнтези">Фэнтези</button>
+        <button class="filter" data-genre="романтика">Романтика</button>
+        <button class="filter" data-genre="фантастика">Фантастика</button>
+        <button class="filter" data-genre="комедия">Комедия</button>
+      </div>
+      <div class="grid" id="grid"></div>
+    </section>
+  </main>
+</div>
+
+<nav class="dock" aria-label="Мобильная навигация">
+  <button class="active" data-dock="popular"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Главная</button>
+  <button data-dock="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>Поиск</button>
+  <button data-dock="ongoing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Онгоинги</button>
+  <button data-dock="saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4.75A1.75 1.75 0 0 1 7.75 3h8.5A1.75 1.75 0 0 1 18 4.75V21l-6-3.8L6 21z"/></svg>Закладки</button>
+</nav>
+
+<!-- Страница аниме: открывается на весь экран, плеер стартует сразу -->
+<div class="page" id="page" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+  <div class="page-bg" id="pBg"></div>
+  <div class="page-in">
+    <div class="bar">
+      <button class="secondary" id="pBack">← Назад</button>
+      <strong id="pBar"></strong>
+      <button class="secondary" id="pSave"></button>
+    </div>
+    <div class="pl"><iframe id="frame" title="Видеоплеер" allow="fullscreen; autoplay; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe><div class="pl-note" id="plNote"></div></div>
+    <div class="vh">Озвучка</div>
+    <div class="voices" id="voices"></div>
+    <div class="info">
+      <img class="cover" id="pCover" alt="">
+      <div>
+        <h2 id="pTitle"></h2><div class="orig" id="pOrig"></div>
+        <div class="rate" id="pRate"></div>
+        <div class="meta" id="pMeta" style="margin:0"></div>
+      </div>
+      <p class="desc" id="pDesc"></p>
+    </div>
+    <div class="tags" id="pTags"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s, r = document) => r.querySelector(s);
+  const grid = $('#grid'), search = $('#search');
+  let mode = 'popular', genre = 'all', query = '', items = [], heroItem = null, cur = null, timer, reqId = 0;
+  const store = {
+    get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+  };
+  let saved = store.get('aoi-saved-v2', {});               // key -> карточка (закладки живут без запросов)
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2000); };
+  async function api(path) {
+    const r = await fetch(path, {headers: {Accept: 'application/json'}});
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.detail || 'Сервер не ответил. Запустите AOI через server.py');
+    return d;
+  }
+  const STATUS = {ongoing: 'Выходит', released: 'Завершено', anons: 'Скоро'};
+  const rate = v => v ? Number(v).toFixed(1) : '—';
+  const status = it => STATUS[it.status] || (it.kind === 'anime' ? 'Фильм' : 'Аниме');
+  const BM = '<svg width="16" height="16" viewBox="0 0 24 24" fill="FILL" stroke="currentColor" stroke-width="1.8"><path d="M6 4.75A1.75 1.75 0 0 1 7.75 3h8.5A1.75 1.75 0 0 1 18 4.75V21l-6-3.8L6 21z"/></svg>';
+  const bm = on => BM.replace('FILL', on ? 'currentColor' : 'none');
+  const ratingChips = it => `${it.kp ? `<span>Кинопоиск<b>${rate(it.kp)}</b></span>` : ''}${it.imdb ? `<span>IMDb<b>${rate(it.imdb)}</b></span>` : ''}`;
+
+  /* ---------- Каталог ---------- */
+  async function load() {
+    const id = ++reqId;
+    if (mode === 'saved') { items = Object.values(saved); heads('Ваши закладки', 'Сохранённые истории'); return render(); }
+    grid.innerHTML = '<div class="loading"><span class="spinner"></span>Загружаем каталог…</div>';
+    heads(query ? 'Результаты поиска' : mode === 'ongoing' ? 'Онгоинги' : 'Популярное аниме',
+          query ? `По запросу «${query}»` : mode === 'ongoing' ? 'Новые серии выходят прямо сейчас' : 'Истории, которые стоит посмотреть');
+    try {
+      const d = await api('/api/catalog?' + new URLSearchParams({q: query, mode}));
+      if (id !== reqId) return;
+      items = d.items || [];
+      render();
+      if (!heroItem && !query && items.length) setHero(items.find(i => i.banner) || items[0]);
+    } catch (e) {
+      if (id !== reqId) return;
+      grid.innerHTML = `<div class="empty">${esc(e.message)}<br><br><button class="secondary" id="retry">Попробовать снова</button></div>`;
+      $('#retry').onclick = load;
+    }
+  }
+  const heads = (t, s) => { $('#sectionTitle').textContent = t; $('#sectionSubtitle').textContent = s; };
+  function render() {
+    const gs = genre === 'all' ? null : genre.split('|');
+    const list = gs ? items.filter(i => (i.genres || []).some(g => gs.some(x => g.toLowerCase().includes(x)))) : items;
+    $('#countLabel').textContent = `${list.length} аниме`;
+    if (!list.length) { grid.innerHTML = `<div class="empty">${mode === 'saved' ? 'Пока нет закладок. Нажмите на значок закладки у понравившегося аниме.' : 'Ничего не найдено. Попробуйте другое название или жанр.'}</div>`; return; }
+    grid.innerHTML = list.map((it, i) => `<article class="card" data-key="${esc(it.key)}" style="animation-delay:${Math.min(i, 12) * 25}ms">
+      <div class="poster-wrap">
+        ${it.poster ? `<img class="poster" src="${esc(it.poster)}" alt="${esc(it.title)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : '<div class="poster"></div>'}
+        <div class="score">${it.kp ? `<span>КП ${rate(it.kp)}</span>` : ''}${it.imdb ? `<span>IMDb ${rate(it.imdb)}</span>` : ''}</div>
+        <button class="save ${saved[it.key] ? 'saved' : ''}" data-save="${esc(it.key)}" aria-label="Закладки">${bm(saved[it.key])}</button>
+      </div>
+      <div class="card-title" title="${esc(it.title)}">${esc(it.title)}</div>
+      <div class="card-sub"><span>${esc(status(it))}</span><span>${esc(it.year || '')}</span></div></article>`).join('');
+    grid.querySelectorAll('img.poster').forEach(img => img.addEventListener('error', () => { img.style.opacity = 0; }, {once: true}));
+    grid.querySelectorAll('.card').forEach((c, i) => c.addEventListener('click', e => {
+      const b = e.target.closest('[data-save]');
+      if (b) return toggleSave(list[i]);
+      openPage(list[i]);
+    }));
+  }
+  function toggleSave(it) {
+    if (saved[it.key]) { delete saved[it.key]; toast('Удалено из закладок'); }
+    else { saved[it.key] = it; toast('Добавлено в закладки'); }
+    store.set('aoi-saved-v2', saved);
+    if (heroItem) setHero(heroItem);
+    if (cur) $('#pSave').innerHTML = saveLabel(cur);
+    mode === 'saved' ? load() : render();
+  }
+  const saveLabel = it => `${bm(saved[it.key])} ${saved[it.key] ? 'В закладках' : 'В закладки'}`;
+
+  function setHero(it) {
+    heroItem = it;
+    const bg = it.banner || it.poster;
+    $('#heroBg').style.backgroundImage = bg ? `url("${bg.replace(/["\\]/g, '')}")` : 'none';
+    $('#heroTitle').textContent = it.title;
+    $('#heroDesc').textContent = (it.desc || '').slice(0, 170);
+    $('#heroMeta').innerHTML = `${ratingChips(it).replace(/<b>/g, ' <b>')}<span>${esc(status(it))}</span>${it.year ? `<span>${esc(it.year)}</span>` : ''}${it.eps ? `<span>${it.eps} эп.</span>` : ''}`;
+    $('#heroSave').innerHTML = saveLabel(it);
+  }
+  $('#heroSave').onclick = () => heroItem && toggleSave(heroItem);
+  $('#heroWatch').onclick = () => heroItem && openPage(heroItem);
+
+  /* ---------- Страница аниме ---------- */
+  const HOSTS = /(^|\.)(kodikplayer\.com|kodik\.info|kodik\.biz|kodik\.cc|aniqit\.com)$/i;
+  function playUrl(raw) {
+    let u = String(raw || '').trim(); if (u.startsWith('//')) u = 'https:' + u;
+    try { const p = new URL(u); if (!/^https?:$/.test(p.protocol) || !HOSTS.test(p.hostname)) return null; p.searchParams.set('translations', 'false'); return p.href; }
+    catch { return null; }
+  }
+  function fill(it) {
+    $('#pBar').textContent = it.title;
+    $('#pTitle').textContent = it.title;
+    $('#pOrig').textContent = [it.orig, it.year].filter(Boolean).join(' · ');
+    $('#pCover').src = it.poster || ''; $('#pCover').alt = it.title;
+    $('#pBg').style.backgroundImage = it.poster ? `url("${it.poster.replace(/["\\]/g, '')}")` : 'none';
+    $('#pRate').innerHTML = `<div>Кинопоиск<b>${rate(it.kp)}</b></div><div>IMDb<b>${rate(it.imdb)}</b></div>`;
+    $('#pMeta').innerHTML = `<span>${esc(status(it))}</span>${it.eps ? `<span>${it.eps} эп.</span>` : ''}`;
+    $('#pDesc').textContent = it.desc || 'Описание пока не добавлено.';
+    $('#pTags').innerHTML = (it.genres || []).map(g => `<span class="tag">${esc(g)}</span>`).join('');
+    $('#pSave').innerHTML = saveLabel(it);
+  }
+  async function openPage(it, push = true) {
+    cur = it; fill(it);
+    $('#frame').src = 'about:blank';
+    $('#plNote').textContent = 'Подбираем озвучки…'; $('#plNote').hidden = false;
+    $('#voices').innerHTML = '';
+    $('#page').classList.add('open'); $('#page').scrollTop = 0;
+    document.body.style.overflow = 'hidden';
+    if (push) history.pushState({page: it.key}, '');
+    try {
+      const d = await api('/api/title?key=' + encodeURIComponent(it.key));
+      if (cur !== it) return;
+      if (d.item) { cur = Object.assign({}, it, d.item); fill(cur); }
+      const voices = (d.voices || []).filter(v => playUrl(v.link));
+      if (!voices.length) { $('#plNote').textContent = 'Для этого аниме пока нет доступных озвучек.'; return; }
+      const pref = store.get('aoi-voice-' + it.key, null);
+      showVoices(voices);
+      play(voices.find(v => v.id === pref) || voices[0], voices, false);   // плеер включается сразу
+    } catch (e) { if (cur === it) $('#plNote').textContent = e.message; }
+  }
+  function showVoices(voices) {
+    const dub = voices.filter(v => v.type !== 'subtitles'), subs = voices.filter(v => v.type === 'subtitles');
+    $('#voices').innerHTML = dub.map(voiceBtn).join('') +
+      (subs.length ? '<div class="vh" style="width:100%;margin:14px 0 0">Субтитры</div>' + subs.map(voiceBtn).join('') : '');
+    $('#voices').querySelectorAll('.voice').forEach(b => b.onclick = () => play(voices.find(v => String(v.id) === b.dataset.id), voices, true));
+  }
+  const voiceBtn = v => `<button class="voice" data-id="${esc(v.id)}"><span>${esc(v.name)}</span><small>${v.eps ? v.eps + ' эп.' : 'Фильм'}${v.quality ? ' · ' + esc(v.quality) : ''}</small></button>`;
+  function play(v, voices, fromUser) {
+    const url = v && playUrl(v.link); if (!url) return toast('Не удалось открыть плеер');
+    $('#frame').src = url; $('#plNote').hidden = true;
+    $('#voices').querySelectorAll('.voice').forEach(b => b.classList.toggle('active', b.dataset.id === String(v.id)));
+    store.set('aoi-voice-' + cur.key, v.id);
+    if (fromUser) toast('Озвучка: ' + v.name);
+  }
+  function hidePage() {
+    $('#page').classList.remove('open'); $('#frame').src = 'about:blank';
+    document.body.style.overflow = ''; cur = null;
+  }
+  $('#pBack').onclick = () => history.state && history.state.page ? history.back() : hidePage();
+  $('#pSave').onclick = () => cur && toggleSave(cur);
+  addEventListener('popstate', hidePage);
+  addEventListener('keydown', e => { if (e.key === 'Escape' && $('#page').classList.contains('open')) $('#pBack').click(); });
+
+  /* ---------- Навигация ---------- */
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+    document.querySelectorAll('[data-dock]').forEach(b => b.classList.toggle('active', b.dataset.dock === m));
+    load();
+  }
+  search.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => { query = search.value.trim(); if (mode === 'saved') mode = 'popular'; setMode(mode); }, 350);
+  });
+  document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { query = ''; search.value = ''; setMode(b.dataset.mode); });
+  document.querySelectorAll('[data-genre]').forEach(b => b.onclick = () => {
+    genre = b.dataset.genre; document.querySelectorAll('[data-genre]').forEach(x => x.classList.toggle('active', x === b)); render();
+  });
+  document.querySelectorAll('[data-dock]').forEach(b => b.onclick = () => {
+    const d = b.dataset.dock;
+    if (d === 'search') { search.focus(); scrollTo({top: 0}); return; }
+    query = ''; search.value = ''; setMode(d); if (d === 'popular') scrollTo({top: 0});
+  });
+  load();
+})();
+</script>
+</body>
+</html>
